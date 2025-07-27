@@ -26,28 +26,32 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [error, setError] = useState("");
-  const [model] = useState("sonar-pro"); 
+  const [model, setModel] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chat-model') || 'sonar-pro';
+    }
+    return 'sonar-pro';
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
 
   // Load theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    } else {
-      setTheme('dark');
+    if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
+      setTheme('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      setTheme('light');
     }
   }, []);
 
-  // Update theme and persist
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    const html = document.documentElement;
+    const isDark = html.classList.toggle('dark');
+    setTheme(isDark ? 'dark' : 'light');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   };
 
   useEffect(() => {
@@ -78,6 +82,13 @@ export default function Home() {
       localStorage.setItem("chat-messages", JSON.stringify(messages));
     }
   }, [messages, hydrated]);
+
+  // Persist model to localStorage
+  useEffect(() => {
+    if (hydrated) {
+      localStorage.setItem('chat-model', model);
+    }
+  }, [model, hydrated]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -131,14 +142,14 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-[#18181b] text-white font-sans overflow-x-hidden">
+    <div className="flex h-screen font-sans overflow-x-hidden">
       {/* Mobile sidebar toggle button */}
       <button
         className="sm:hidden fixed top-4 left-4 z-30 bg-[#202123] p-2 rounded-lg border border-zinc-700 text-white focus:outline-none"
         onClick={() => setSidebarOpen(true)}
         aria-label="Open sidebar"
       >
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg th="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -146,8 +157,8 @@ export default function Home() {
       {/* Sidebar */}
       {/* Desktop sidebar */}
       <aside
-        className="hidden sm:flex flex-col w-64 bg-[#202123] border-r border-zinc-800 p-4 gap-4 h-full sticky top-0 left-0 z-20 scrollbar-none"
-        style={{ scrollbarWidth: 'none' }}
+        className="hidden sm:flex flex-col w-64 border-r border-zinc-800 p-4 gap-4 h-full sticky top-0 left-0 z-20 scrollbar-none"
+        style={{ scrollbarWidth: 'none', background: 'var(--background)', color: 'var(--foreground)' }}
       >
         {/* Logo and name, always visible */}
         <div className="flex items-center gap-3 mb-0 sm:mb-6">
@@ -164,7 +175,8 @@ export default function Home() {
         {/* New Chat button, always visible */}
         <button
           onClick={handleNewChat}
-          className="flex items-center gap-2 px-4 py-3 rounded-lg bg-[#343541] hover:bg-[#444654] border border-zinc-700 text-base font-medium transition focus:outline-none focus:ring-2 focus:ring-[#11a37f] ml-auto sm:ml-0"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg text-base font-medium transition focus:outline-none focus:ring-2 focus:ring-[#11a37f] ml-auto sm:ml-0 assistant-bubble"
+          style={{ background: 'var(--assistant-bubble-bg, #f3f4f6)', color: 'var(--assistant-bubble-text, #222)', border: '0.5px solid var(--assistant-bubble-border, #f1f1f1)', boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="inline-block">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -174,7 +186,7 @@ export default function Home() {
         {/* Hide chat list and footer on mobile, show on desktop */}
         <div className="mt-6 text-xs text-zinc-400 uppercase tracking-wider hidden sm:block">Chats</div>
         <div className="flex-1 overflow-y-hidden mt-2 space-y-2 scrollbar-none hidden sm:block" style={{ scrollbarWidth: 'none' }}>
-          <div className="bg-[#353740] rounded-md px-3 py-2 text-sm text-white cursor-pointer">New chat</div>
+          <div className="rounded-md px-3 py-2 text-sm cursor-pointer assistant-bubble" style={{ background: 'var(--assistant-bubble-bg, #f3f4f6)', color: 'var(--assistant-bubble-text, #222)', border: '0.5px solid var(--assistant-bubble-border, #f1f1f1)', boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}>New chat</div>
           {/* Placeholder for chat list */}
         </div>
         <div className="mt-auto pt-4 border-t border-zinc-800 text-xs text-zinc-500 hidden sm:block">Angad kumar<br/>Free</div>
@@ -185,7 +197,7 @@ export default function Home() {
         <div className="fixed inset-0 z-40 flex">
           {/* Overlay background */}
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
-          <aside className="flex flex-col w-64 bg-[#202123] border-r border-zinc-800 p-4 gap-4 h-full z-50 animate-slide-in-left">
+          <aside className="flex flex-col w-64 border-r border-zinc-800 p-4 gap-4 h-full z-50 animate-slide-in-left" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
             <div className="flex items-center gap-3 mb-6">
               <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="22" cy="22" r="22" fill="#10A37F" />
@@ -208,7 +220,7 @@ export default function Home() {
             </button>
             <div className="mt-6 text-xs text-zinc-400 uppercase tracking-wider">Chats</div>
             <div className="flex-1 overflow-y-hidden mt-2 space-y-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
-              <div className="bg-[#353740] rounded-md px-3 py-2 text-sm text-white cursor-pointer">New chat</div>
+              <div className="rounded-md px-3 py-2 text-sm cursor-pointer" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>New chat</div>
               {/* Placeholder for chat list */}
             </div>
             <div className="mt-auto pt-4 border-t border-zinc-800 text-xs text-zinc-500">Angad kumar<br/>Free</div>
@@ -225,13 +237,66 @@ export default function Home() {
         </div>
       )}
       {/* Main chat area */}
-      <div className="flex flex-col flex-1 h-full max-w-4xl mx-auto">
-        <header className="py-4 px-6 border-b border-zinc-800 bg-[#202123] text-lg font-bold flex items-center justify-between shadow-sm sticky top-0 z-10">
-          <span className="tracking-tight text-center w-full sm:w-auto">ChatGPT UI Clone</span>
+      <div className="flex flex-col flex-1 h-full max-w-2xl mx-auto">
+        <header className="py-4 text-lg font-bold flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center sm:w-auto">
+            <div style={{ position: 'relative', display: 'inline-block', width: 150, minWidth: 120 }}>
+              <select
+                id="model-select"
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                className="pl-3 pr-8 py-2 rounded-xl font-semibold shadow focus:outline-none focus:ring-2 focus:ring-[#11a37f] transition-all model-dropdown-select"
+                style={{
+                  width: '100%',
+                  fontSize: '1.08rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  height: '40px',
+                  lineHeight: '40px',
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                }}
+              >
+                <option value="sonar-pro">sonar-pro</option>
+                <option value="sonar-small-chat">sonar-small-chat</option>
+                <option value="llama-3-sonar-small-32k-chat">llama-3-sonar-small-32k-chat</option>
+              </select>
+              {/* Chevron icon */}
+              <span style={{
+                pointerEvents: 'none',
+                position: 'absolute',
+                right: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--assistant-bubble-text, #222)',
+                fontSize: 18,
+                display: 'flex',
+                alignItems: 'center',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <style jsx global>{`
+                select#model-select option {
+                  background: var(--assistant-bubble-bg, #f3f4f6);
+                  color: var(--assistant-bubble-text, #222);
+                }
+                html.dark select#model-select option {
+                  background: var(--assistant-bubble-bg, #23272f);
+                  color: var(--assistant-bubble-text, #fff);
+                }
+              `}</style>
+            </div>
+          </div>
           <button
             onClick={toggleTheme}
-            className="ml-4 p-2 rounded-full border border-zinc-700 bg-[#343541] hover:bg-[#444654] text-white focus:outline-none focus:ring-2 focus:ring-[#11a37f]"
+            className="ml-4 p-2 rounded-full assistant-bubble focus:outline-none focus:ring-2 focus:ring-[#11a37f]"
             aria-label="Toggle theme"
+            style={{ background: 'var(--assistant-bubble-bg, #f3f4f6)', color: 'var(--assistant-bubble-text, #222)', border: '0.5px solid var(--assistant-bubble-border, #f1f1f1)', boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
           >
             {theme === 'dark' ? (
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -255,6 +320,8 @@ export default function Home() {
             setInput={setInput}
             onSend={handleSend}
             loading={loading}
+            bubbleStyle={{ background: 'var(--background)', color: 'var(--foreground)' }}
+            inputBarStyle={{ background: 'var(--background)', color: 'var(--foreground)' }}
           />
         </div>
       </div>

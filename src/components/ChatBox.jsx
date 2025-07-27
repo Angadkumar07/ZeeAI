@@ -23,11 +23,17 @@ function ChatBox({ messages, input, setInput, onSend, loading }) {
             className={`flex mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`relative max-w-[80%] px-4 py-3 rounded-2xl shadow-md text-base whitespace-pre-line break-words transition-all
-                ${msg.role === 'user'
-                  ? 'bg-[#2a2b32] text-white rounded-br-md'
-                  : 'bg-[#444654] text-[#ececf1] rounded-bl-md border border-zinc-700'}
-              `}
+              className={
+                `relative max-w-[80%] px-4 py-3 rounded-2xl text-base whitespace-pre-line break-words transition-all ` +
+                (msg.role === 'user'
+                  ? 'bg-[#11a37f] text-white rounded-br-md font-semibold'
+                  : 'assistant-bubble')
+              }
+              style={
+                msg.role === 'user'
+                  ? { boxShadow: '0 2px 8px 0 rgba(225, 235, 233, 0.55)' }
+                  : { background: 'var(--assistant-bubble-bg, #f3f4f6)', color: 'var(--assistant-bubble-text, #222)', boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', border: '0.5px solid var(--assistant-bubble-border, #f1f1f1)' }
+              }
             >
               {msg.content}
             </div>
@@ -35,7 +41,7 @@ function ChatBox({ messages, input, setInput, onSend, loading }) {
         ))}
         {loading && (
           <div className="flex mb-4 justify-start">
-            <div className="max-w-[80%] px-4 py-3 rounded-2xl shadow-md text-base bg-[#444654] text-[#ececf1] border border-zinc-700 animate-pulse">
+            <div className="max-w-[80%] px-4 py-3 rounded-2xl text-base animate-pulse assistant-bubble" style={{ boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', border: '0.5px solid var(--assistant-bubble-border, #f1f1f1)' }}>
               <span className="opacity-70">Thinking…</span>
             </div>
           </div>
@@ -44,12 +50,13 @@ function ChatBox({ messages, input, setInput, onSend, loading }) {
       </div>
       <form
         onSubmit={e => { e.preventDefault(); if (!loading) onSend(); }}
-        className="bg-[#202123] border-t border-zinc-800 px-4 py-4 flex items-center gap-2 sticky bottom-0 w-full mx-auto"
-        style={{ boxShadow: '0 -2px 8px 0 rgba(0,0,0,0.08)' }}
+        className="px-4 py-4 flex items-center gap-2 sticky bottom-0 w-full mx-auto"
+        style={{ boxShadow: '0 -2px 12px 0 rgba(195, 174, 174, 0.08)', background: 'var(--background)', color: 'var(--foreground)', borderRadius: '0 0 1rem 1rem' }}
       >
         <input
           type="text"
-          className="flex-1 bg-[#343541] border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-zinc-400"
+          className="flex-1 border border-zinc-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-zinc-400"
+          style={{ background: 'var(--background)', color: 'var(--foreground)' }}
           placeholder="Type your message..."
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -65,6 +72,21 @@ function ChatBox({ messages, input, setInput, onSend, loading }) {
           Send
         </button>
       </form>
+      <style jsx global>{`
+        .assistant-bubble {
+          background: var(--assistant-bubble-bg, #f3f4f6);
+          color: var(--assistant-bubble-text, #222);
+          font-size: 1.05rem;
+          font-weight: 500;
+          line-height: 1.7;
+          --assistant-bubble-border: #f1f1f1;
+        }
+        html.dark .assistant-bubble {
+          --assistant-bubble-bg: #23272f;
+          --assistant-bubble-text: #fff;
+          --assistant-bubble-border: #2a2d32;
+        }
+      `}</style>
     </div>
   );
 }
