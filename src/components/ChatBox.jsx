@@ -35,7 +35,15 @@ function ChatBox({ messages, input, setInput, onSend, loading }) {
                   : { background: 'var(--assistant-bubble-bg, #f3f4f6)', color: 'var(--assistant-bubble-text, #222)', boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', border: '0.5px solid var(--assistant-bubble-border, #f1f1f1)' }
               }
             >
-              {msg.content}
+              {msg.role === 'assistant' && typeof msg.content === 'string' ? (
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }}
+                />
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
